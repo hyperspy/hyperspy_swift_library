@@ -2,9 +2,19 @@
 
 Read Nion Swift libraries into HyperSpy object.
 
-This package depends on ``nionswift``.
 
-## Usage
+## Installation
+
+This package depends on [Nion Swift](https://github.com/nion-software/nionswift). Installing
+it](https://nionswift.readthedocs.io/en/stable/installation.html) with ``conda``
+before installing ``hyperspy_swift_library`` is recommended.
+
+
+```bash
+pip install https://github.com/hyperspy/hyperspy_swift_library/archive/master.tar.gz
+```
+
+## UsageInstallation
 
 ```python
 >>> from hyperspy_swift_libray import SwiftLibraryReader
@@ -23,3 +33,6 @@ This package depends on ``nionswift``.
 >>> lib.load_data(2, lazy=True)
 <LazySignal2D, title: , dimensions: (|512, 512)>
 ```
+
+```bash
+
