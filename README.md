@@ -33,6 +33,3 @@ pip install --upgrade https://github.com/hyperspy/hyperspy_swift_library/archive
 >>> lib.load_data(2, lazy=True)
 <LazySignal2D, title: , dimensions: (|512, 512)>
 ```
-
-```bash
-
