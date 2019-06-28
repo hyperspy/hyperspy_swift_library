@@ -13,7 +13,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/hyperspy/hyperspy_swift_libray",
     packages=setuptools.find_packages(),
-    install_requires=["nionswift>0.14"],
+    install_requires=["nionswift>0.14", "hyperspy"],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
