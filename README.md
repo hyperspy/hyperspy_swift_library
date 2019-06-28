@@ -5,13 +5,13 @@ Read Nion Swift libraries into HyperSpy object.
 
 ## Installation
 
-This package depends on [Nion Swift](https://github.com/nion-software/nionswift). Installing
+This package depends on [Nion Swift](https://github.com/nion-software/nionswift). [Installing
 it](https://nionswift.readthedocs.io/en/stable/installation.html) with ``conda``
 before installing ``hyperspy_swift_library`` is recommended.
 
 
 ```bash
-pip install https://github.com/hyperspy/hyperspy_swift_library/archive/master.tar.gz
+pip install --upgrade https://github.com/hyperspy/hyperspy_swift_library/archive/master.tar.gz
 ```
 
 ## UsageInstallation
