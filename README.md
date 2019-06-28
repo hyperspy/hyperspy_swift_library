@@ -14,7 +14,7 @@ before installing ``hyperspy_swift_library`` is recommended.
 pip install --upgrade https://github.com/hyperspy/hyperspy_swift_library/archive/master.tar.gz
 ```
 
-## UsageInstallation
+## Usage
 
 ```python
 >>> from hyperspy_swift_libray import SwiftLibraryReader
