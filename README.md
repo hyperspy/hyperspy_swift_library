@@ -17,7 +17,7 @@ pip install --upgrade https://github.com/hyperspy/hyperspy_swift_library/archive
 ## Usage
 
 ```python
->>> from hyperspy_swift_libray import SwiftLibraryReader
+>>> from hyperspy_swift_library import SwiftLibraryReader
 >>> lib = SwiftLibraryReader("Nion Swift Library 20190531/")
 >>> lib.list_data_items(signal_type="image")
 1
