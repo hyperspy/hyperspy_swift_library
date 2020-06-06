@@ -112,3 +112,37 @@ class SwiftLibraryReader:
                 shape=md["data_shape"]))
         signal.original_metadata.add_dictionary(md)
         return signal
+
+    def Dictionary_data_items(self, signal_type=None, list_print=True):
+        Dict_data = {}
+        for i, md in enumerate(self._data_items_properties):
+            if signal_type == "ndspectrum":
+                if md["datum_dimension_count"] != 1 or md["data_shape"][0] < 2:
+                    continue
+            elif signal_type == "spectrum":
+                if md["datum_dimension_count"] != 1 or md["data_shape"][0] > 1:
+                    continue
+            elif signal_type == "image":
+                if md["datum_dimension_count"] != 2 or len(
+                        md["data_shape"]) != 2:
+                    continue
+            elif signal_type == "ndimage":
+                if md["datum_dimension_count"] != 2 or len(
+                        md["data_shape"]) < 3:
+                    continue
+            elif signal_type is not None:
+                raise ValueError(
+                    "signal_type must be one of: ndspectrum, spectrum, ndimage, image, not %s" %
+                    signal_type)
+            datum_dimension_count = 1
+            if list_print == True:
+                print(f"{i}")
+                print(f'\tTitle: {md["title"]}')
+                print(f'\tCreated: {md["created"]}')
+                print(f'\tShape: {md["data_shape"]}')
+                print(f'\tDatum dimension: {md["datum_dimension_count"]}')
+
+            Dict_data [i] = [md["title"], md["data_shape"], md["datum_dimension_count"]]
+
+        return Dict_data
+
