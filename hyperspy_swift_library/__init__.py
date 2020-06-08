@@ -69,19 +69,13 @@ class SwiftLibraryReader:
             di.read_properties() for di in self._data_items]
 
     def get_data_items(self):
-        """	
-        Parameters
-        ----------	
-        workspace_dir : string
-                        path to Nion Swift library
+        """Creates a DataFrame containing data_items properties in a NionSwift library
+       
         Returns
         ----------
 
-        DataFrame : Pandas DataFrame containing data_items properties if Pandas is intalled
-                    _data_items_properties if Pandas is not installed
-
-        The intended use of this method is to obtain a DataFrame that can be filtered using Pandas methods.
-        
+        DataFrame : Pandas DataFrame containing data_items properties if Pandas is installed; otherwise a dictionary containing the same data.
+               
         Examples
         --------
 
