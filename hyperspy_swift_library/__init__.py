@@ -69,6 +69,18 @@ class SwiftLibraryReader:
             di.read_properties() for di in self._data_items]
 
     def get_data_items(self):
+        """ Returns DataFrame if Pandas is installed containing the data_items properties in a Nion Library
+        Returns _data_items_properties is panda is not installed
+
+        The intended use of this method is to obtain a DataFrame that can be filtered using Pandas methods.
+        For example:
+        >>>df["title"]
+        0           HADF
+        1    LowMag2_TEM
+        2    LowMag1_TEM
+        Name: title, dtype: object
+
+        """
         try:
             import pandas as pd
             df = pd.DataFrame(self._data_items_properties)
