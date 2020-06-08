@@ -68,53 +68,8 @@ class SwiftLibraryReader:
         self._data_items_properties = [
             di.read_properties() for di in self._data_items]
 
-    def list_data_items(self, signal_type=None):
-        for i, md in enumerate(self._data_items_properties):
-            if signal_type == "ndspectrum":
-                if md["datum_dimension_count"] != 1 or md["data_shape"][0] < 2:
-                    continue
-            elif signal_type == "spectrum":
-                if md["datum_dimension_count"] != 1 or md["data_shape"][0] > 1:
-                    continue
-            elif signal_type == "image":
-                if md["datum_dimension_count"] != 2 or len(
-                        md["data_shape"]) != 2:
-                    continue
-            elif signal_type == "ndimage":
-                if md["datum_dimension_count"] != 2 or len(
-                        md["data_shape"]) < 3:
-                    continue
-            elif signal_type is not None:
-                raise ValueError(
-                    "signal_type must be one of: ndspectrum, spectrum, ndimage, image, not %s" %
-                    signal_type)
-            datum_dimension_count = 1
-            print(f"{i}")
-            print(f'\tTitle: {md["title"]}')
-            print(f'\tCreated: {md["created"]}')
-            print(f'\tShape: {md["data_shape"]}')
-            print(f'\tDatum dimension: {md["datum_dimension_count"]}')
-
-    def load_data(self, num, lazy=True):
-        handler = self._data_items[num]
-        md = self._data_items_properties[num]
-        if md["datum_dimension_count"] == 1:
-            Signal = LazySignal1D if lazy else Signal1D
-        elif md["datum_dimension_count"] == 2:
-            Signal = LazySignal2D if lazy else Signal2D
-        data = handler.read_data()
-        if lazy:
-            data = da.from_array(data)
-        signal = Signal(
-            data=data,
-            axes=axes_swift2hspy(
-                md["dimensional_calibrations"],
-                shape=md["data_shape"]))
-        signal.original_metadata.add_dictionary(md)
-        return signal
-
-    def Dictionary_data_items(self, signal_type=None, list_print=True):
-        Dict_data = {}
+    def list_data_items(self, signal_type=None, list_print=True):
+        dict_data = {}
         for i, md in enumerate(self._data_items_properties):
             if signal_type == "ndspectrum":
                 if md["datum_dimension_count"] != 1 or md["data_shape"][0] < 2:
@@ -141,8 +96,40 @@ class SwiftLibraryReader:
                 print(f'\tCreated: {md["created"]}')
                 print(f'\tShape: {md["data_shape"]}')
                 print(f'\tDatum dimension: {md["datum_dimension_count"]}')
+            if "title" in dict_data:
+                dict_data["title"].append(md["title"])
+            else:
+                dict_data["title"] = [md["title"]]
+            if "data_shape" in dict_data:
+                dict_data["data_shape"].append(md["data_shape"])
+            else:
+                dict_data["data_shape"] = [md["data_shape"]]
+            if "datum_dimension_count" in dict_data:
+                dict_data["datum_dimension_count"].append(md["datum_dimension_count"])
+            else:
+                dict_data["datum_dimension_count"] = [md["datum_dimension_count"]]
+            if "created" in dict_data:
+                dict_data["created"].append(md["created"])
+            else:
+                dict_data["created"] = [md["created"]]
+        return dict_data
 
-            Dict_data [i] = [md["title"], md["data_shape"], md["datum_dimension_count"]]
+    def load_data(self, num, lazy=True):
+        handler = self._data_items[num]
+        md = self._data_items_properties[num]
+        if md["datum_dimension_count"] == 1:
+            Signal = LazySignal1D if lazy else Signal1D
+        elif md["datum_dimension_count"] == 2:
+            Signal = LazySignal2D if lazy else Signal2D
+        data = handler.read_data()
+        if lazy:
+            data = da.from_array(data)
+        signal = Signal(
+            data=data,
+            axes=axes_swift2hspy(
+                md["dimensional_calibrations"],
+                shape=md["data_shape"]))
+        signal.original_metadata.add_dictionary(md)
+        return signal
 
-        return Dict_data
 
