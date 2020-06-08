@@ -68,6 +68,34 @@ class SwiftLibraryReader:
         self._data_items_properties = [
             di.read_properties() for di in self._data_items]
 
+    def get_data_items(self):
+        """Creates a DataFrame containing data_items properties in a NionSwift library
+       
+        Returns
+        ----------
+
+        DataFrame : Pandas DataFrame containing data_items properties if Pandas is installed; otherwise a dictionary containing the same data.
+               
+        Examples
+        --------
+
+        >>> df["title"]
+        0           HADF
+        1    LowMag2_TEM
+        2    LowMag1_TEM
+        Name: title, dtype: object
+
+        >>> df[df["title"].str.endswith("_TEM")] # can be used for filtering based on "title".
+
+        """
+        try:
+            import pandas as pd
+            df = pd.DataFrame(self._data_items_properties)
+            return df
+        except ImportError as e:
+            properties = self._data_items_properties
+            return properties
+
     def list_data_items(self, signal_type=None):
         for i, md in enumerate(self._data_items_properties):
             if signal_type == "ndspectrum":
