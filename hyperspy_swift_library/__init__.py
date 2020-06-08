@@ -74,11 +74,13 @@ class SwiftLibraryReader:
 
         The intended use of this method is to obtain a DataFrame that can be filtered using Pandas methods.
         For example:
-        >>>df["title"]
+        >>> df["title"]
         0           HADF
         1    LowMag2_TEM
         2    LowMag1_TEM
         Name: title, dtype: object
+
+        >>> df[df["title"].str.endswith("_TEM")] # can be used for filtering based on "title".
 
         """
         try:
