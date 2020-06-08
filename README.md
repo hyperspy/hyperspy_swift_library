@@ -18,6 +18,7 @@ pip install --upgrade https://github.com/hyperspy/hyperspy_swift_library/archive
 
 ```python
 >>> from hyperspy_swift_library import SwiftLibraryReader
+>>> import pandas as pd
 >>> lib = SwiftLibraryReader("Nion Swift Library 20190531/")
 >>> lib.list_data_items(signal_type="image")
 1
@@ -32,4 +33,13 @@ pip install --upgrade https://github.com/hyperspy/hyperspy_swift_library/archive
 	Datum dimension: 2
 >>> lib.load_data(2, lazy=True)
 <LazySignal2D, title: , dimensions: (|512, 512)>
+
+>>> df = lib.get_data_items()
+>>> df["title"]
+0           HADF
+1    LowMag2_TEM
+2    LowMag1_TEM
+Name: title, dtype: object
+
+>>> df[df["title"].str.endswith("_TEM")] # Can be used for filtering based on "title"
 ```
