@@ -140,3 +140,7 @@ class SwiftLibraryReader:
                 shape=md["data_shape"]))
         signal.original_metadata.add_dictionary(md)
         return signal
+
+    def load_data_2(self, num, lazy=True):
+
+        return 0
