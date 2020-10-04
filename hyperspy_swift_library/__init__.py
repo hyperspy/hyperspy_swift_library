@@ -40,4 +40,15 @@ class SwiftLibraryReader:
     def load_data(self, num, lazy=True):
         handler = self.project.data_items[num]
         md = handler.properties
-        print(md)
+        if md["datum_dimension_count"] == 1:
+            Signal = LazySignal1D if lazy else Signal1D
+        elif md["datum_dimension_count"] == 2:
+            Signal = LazySignal2D if lazy else Signal2D
+        data = handler.data
+        if lazy:
+            data = da.from_array(data)
+        signal = Signal(
+            data=data)
+        signal.original_metadata.add_dictionary(md)
+        #Needs to reshape axes to match those of hyperspy. Needs to test for a spim. Needs to add metadata correctly
+        return signal
