@@ -27,15 +27,17 @@ class SwiftLibraryReader:
         r.project._raw_properties["version"] = 3
         r.project.read_project()
         r.project.read_project()
-        self = r.project
+        self.project = r.project
 
 
 
     def list_data_items(self):
-        print(dir(self))
-        return 0
+        for data_item in self.project.data_items:
+            print(data_item.title)
 
 
-    def load_data(self):
-        handler = self._data_items[num]
-        return 0
+
+    def load_data(self, num, lazy=True):
+        handler = self.project.data_items[num]
+        md = handler.properties
+        print(md)
