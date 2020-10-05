@@ -11,7 +11,10 @@ from hyperspy._signals.signal2d import Signal2D, LazySignal2D
 __version__ = "0.1"
 
 
-
+def axes_swift2hspy(axes, shape):
+    for axis, dim in zip(axes, shape):
+        axis["size"] = dim
+    return axes
 
 class SwiftLibraryReader:
     def __init__(self, file_path):
@@ -28,13 +31,63 @@ class SwiftLibraryReader:
         r.project.read_project()
         r.project.read_project()
         self.project = r.project
+        self._data_items_properties = [
+            di.properties for di in self.project.data_items]
 
+    def list_data_items(self, signal_type=None):
+        for i, md in enumerate(self._data_items_properties):
+            if signal_type == "ndspectrum":
+                if md["datum_dimension_count"] != 1 or md["data_shape"][0] < 2:
+                    continue
+            elif signal_type == "spectrum":
+                if md["datum_dimension_count"] != 1 or md["data_shape"][0] > 1:
+                    continue
+            elif signal_type == "image":
+                if md["datum_dimension_count"] != 2 or len(
+                        md["data_shape"]) != 2:
+                    continue
+            elif signal_type == "ndimage":
+                if md["datum_dimension_count"] != 2 or len(
+                        md["data_shape"]) < 3:
+                    continue
+            elif signal_type is not None:
+                raise ValueError(
+                    "signal_type must be one of: ndspectrum, spectrum, ndimage, image, not %s" %
+                    signal_type)
+            datum_dimension_count = 1
+            print(f"{i}")
+            print(f'\tTitle: {md["title"]}')
+            print(f'\tCreated: {md["created"]}')
+            print(f'\tShape: {md["data_shape"]}')
+            print(f'\tDatum dimension: {md["datum_dimension_count"]}')
 
+    def get_data_items(self):
+        """Creates a DataFrame containing data_items properties in a NionSwift library
 
-    def list_data_items(self):
-        for data_item in self.project.data_items:
-            print(data_item.title)
+        Returns
+        ----------
 
+        DataFrame : Pandas DataFrame containing data_items properties if Pandas is installed; otherwise a dictionary containing the same data.
+
+        Examples
+        --------
+
+        >>> df["title"]
+        0           HADF
+        1    LowMag2_TEM
+        2    LowMag1_TEM
+        Name: title, dtype: object
+
+        >>> df[df["title"].str.endswith("_TEM")] # can be used for filtering based on "title".
+
+        """
+        try:
+            import pandas as pd
+            df = pd.DataFrame(self._data_items_properties)
+            return df
+        except ImportError as e:
+            properties = self._data_items_properties
+            return properties
 
 
     def load_data(self, num, lazy=True):
@@ -48,7 +101,9 @@ class SwiftLibraryReader:
         if lazy:
             data = da.from_array(data)
         signal = Signal(
-            data=data)
+            data=data,
+            axes=axes_swift2hspy(
+                md["dimensional_calibrations"],
+                shape=md["data_shape"]))
         signal.original_metadata.add_dictionary(md)
-        #Needs to reshape axes to match those of hyperspy. Needs to test for a spim. Needs to add metadata correctly
         return signal
