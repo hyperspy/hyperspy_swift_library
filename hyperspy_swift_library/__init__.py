@@ -7,6 +7,7 @@ import dask.array as da
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy._signals.signal1d import Signal1D, LazySignal1D
 from hyperspy._signals.signal2d import Signal2D, LazySignal2D
+from importlib.metadata import version
 
 __version__ = "0.1"
 
@@ -27,7 +28,7 @@ class SwiftLibraryReader:
             r.project_folder_path = file_path
         r.persistent_object_context = Persistence.PersistentObjectContext()
         r.load_project(None)
-        r.project._raw_properties["version"] = 3
+        #r.project._raw_properties["version"] = 3
         r.project.read_project()
         r.project.read_project()
         self.project = r.project
