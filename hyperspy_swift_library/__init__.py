@@ -1,15 +1,18 @@
 from nion.swift.model import Persistence
 from nion.swift.model import Profile
 from nion.swift.model import Project
+from nion.swift.model import HardwareSource
 import pathlib
 import typing
 import dask.array as da
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy._signals.signal1d import Signal1D, LazySignal1D
 from hyperspy._signals.signal2d import Signal2D, LazySignal2D
-from importlib.metadata import version
+import os
 
 __version__ = "0.1"
+
+
 
 
 def axes_swift2hspy(axes, shape):
@@ -17,9 +20,16 @@ def axes_swift2hspy(axes, shape):
         axis["size"] = dim
     return axes
 
+
 class SwiftLibraryReader:
-    def __init__(self, file_path):
-        file_path = pathlib.Path(file_path)
+
+    def __init__(self, workspace_dir):
+        self._file_path = workspace_dir
+
+    def read_project(self) -> Project.Project:
+        file_path = pathlib.Path(self._file_path)
+        if not os.path.isfile(file_path):
+            print('Project does not exist!')
         if file_path.suffix == ".nsproj":
             r = Profile.IndexProjectReference()
             r.project_path = file_path
@@ -28,39 +38,17 @@ class SwiftLibraryReader:
             r.project_folder_path = file_path
         r.persistent_object_context = Persistence.PersistentObjectContext()
         r.load_project(None)
-        #r.project._raw_properties["version"] = 3
+        #  r.project._raw_properties["version"] = 3
         r.project.read_project()
-        r.project.read_project()
-        self.project = r.project
-        self._data_items_properties = [
-            di.properties for di in self.project.data_items]
+        return r.project
 
-    def list_data_items(self, signal_type=None):
-        for i, md in enumerate(self._data_items_properties):
-            if signal_type == "ndspectrum":
-                if md["datum_dimension_count"] != 1 or md["data_shape"][0] < 2:
-                    continue
-            elif signal_type == "spectrum":
-                if md["datum_dimension_count"] != 1 or md["data_shape"][0] > 1:
-                    continue
-            elif signal_type == "image":
-                if md["datum_dimension_count"] != 2 or len(
-                        md["data_shape"]) != 2:
-                    continue
-            elif signal_type == "ndimage":
-                if md["datum_dimension_count"] != 2 or len(
-                        md["data_shape"]) < 3:
-                    continue
-            elif signal_type is not None:
-                raise ValueError(
-                    "signal_type must be one of: ndspectrum, spectrum, ndimage, image, not %s" %
-                    signal_type)
-            datum_dimension_count = 1
-            print(f"{i}")
-            print(f'\tTitle: {md["title"]}')
-            print(f'\tCreated: {md["created"]}')
-            print(f'\tShape: {md["data_shape"]}')
-            print(f'\tDatum dimension: {md["datum_dimension_count"]}')
+    def print_data_item_titles_sizes(self) -> None:
+        p = self.read_project()
+        for data_item in p.data_items:
+            print(f"{data_item.title}: {data_item.xdata.data.shape}")
+
+
+
 
     def get_data_items(self):
         """Creates a DataFrame containing data_items properties in a NionSwift library
@@ -82,17 +70,28 @@ class SwiftLibraryReader:
         >>> df[df["title"].str.endswith("_TEM")] # can be used for filtering based on "title".
 
         """
+
+        p = self.read_project()
+        properties = {}
+        for data_item in p.data_items:
+            for key in data_item.properties.keys():
+                if key in properties.keys():
+                    properties[key].append(data_item.properties[key])
+                else:
+                    properties[key] = [data_item.properties[key]]
+
         try:
             import pandas as pd
-            df = pd.DataFrame(self._data_items_properties)
+            df = pd.DataFrame(properties)
             return df
         except ImportError as e:
-            properties = self._data_items_properties
             return properties
 
 
+
     def load_data(self, num, lazy=True):
-        handler = self.project.data_items[num]
+        project = self.read_project()
+        handler = project.data_items[num]
         md = handler.properties
         if md["datum_dimension_count"] == 1:
             Signal = LazySignal1D if lazy else Signal1D
