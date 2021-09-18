@@ -29,7 +29,7 @@ class SwiftLibraryReader:
 
     def read_project(self) -> Project.Project:
         file_path = pathlib.Path(self._file_path)
-        
+
         if not os.path.isfile(file_path):
             print('Project does not exist!')
         if file_path.suffix == ".nsproj":
