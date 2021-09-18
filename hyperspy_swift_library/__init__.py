@@ -24,10 +24,12 @@ def axes_swift2hspy(axes, shape):
 class SwiftLibraryReader:
 
     def __init__(self, workspace_dir):
-        self._file_path = workspace_dir
+        current_path = os.getcwd()
+        self._file_path = current_path+workspace_dir
 
     def read_project(self) -> Project.Project:
         file_path = pathlib.Path(self._file_path)
+        
         if not os.path.isfile(file_path):
             print('Project does not exist!')
         if file_path.suffix == ".nsproj":
