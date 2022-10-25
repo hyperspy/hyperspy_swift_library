@@ -18,22 +18,37 @@ pip install --upgrade https://github.com/hyperspy/hyperspy_swift_library/archive
 
 ```python
 >>> from hyperspy_swift_library import SwiftLibraryReader
->>> import pandas as pd
->>> project = SwiftLibraryReader("Nion Swift Library 20200606/")
->>> project.print_data_item_titles_sizes()
+>>> project = SwiftLibraryReader("Nion Swift Project 20221025.nsproj")
+```
 
-h-BN_Spectrum_Orsay: (1033,)
-h-BN_Spectrum_Orsay_2D: (2000, 1033)
+If [pandas]() is installed, the `get_data_items_properties` returns a Pandas `DataFrame`.
 
->>> df = project.get_data_items()
->>> df["title"]
-0       h-BN_Spectrum_Orsay
-1    h-BN_Spectrum_Orsay_2D
+Using Pandas syntax, it is very easy to select the information that you want to display.
+For example, to display only the title and data_shape columns of the `DataFrame`:
+
+```python
+>>> df = project.get_data_items_properties()
+>>> df[["title", "data_shape"]]
+                                title        data_shape
+0                                EELS       [128, 1024]
+1                     Orsay Scan (BF)        [512, 512]
+2                                EELS            [1024]
+3              Orsay Scan (eels_spim)  [256, 256, 1024]
+4  Pick Sum of Orsay Scan (eels_spim)        <Not data>
+```
+
+To filter data based on its title:
+
+```python
+>>> df[df['title'].str.endswith("(BF)")]['title']
+1    Orsay Scan (BF)
 Name: title, dtype: object
+```
 
->>> df[df['title'].str.endswith("_2D")]['title'] Can be used for filtering based on "title"
+To load data as a HyperSpy signal:
 
-1    h-BN_Spectrum_Orsay_2D
-Name: title, dtype: object
-
+```python
+>>> s = project.load_data(0)
+>>> s
+<LazySignal2D, title: , dimensions: (|1024, 128)>
 ```
