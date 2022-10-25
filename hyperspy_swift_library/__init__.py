@@ -52,11 +52,11 @@ class SwiftLibraryReader:
         """Print data items and the shape of the data array.
         """
         p = self._idp.project
-        for data_item in p.data_items:
+        for n, data_item in enumerate(p.data_items):
             if data_item.xdata:
-                print(f"{data_item.title}: {data_item.xdata.data.shape}")
+                print(f"{n}: {data_item.title}, data_shape={data_item.xdata.data.shape}")
             else:
-                print(f"{data_item.title}: This item does not contain data")
+                print(f"{n}: {data_item.title}, This item does not contain data")
 
     def get_data_items_properties(self):
         """Data items properties
