@@ -1,56 +1,18 @@
-import pathlib
-
-from nion.swift.model import DocumentModel
-from nion.swift.model import DataItem
-from nion.swift.model import FileStorageSystem
+from nion.swift.model import Persistence
 from nion.swift.model import Profile
+from nion.swift.model import Project
+from nion.swift.model import HardwareSource
+import pathlib
+import typing
 import dask.array as da
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy._signals.signal1d import Signal1D, LazySignal1D
 from hyperspy._signals.signal2d import Signal2D, LazySignal2D
+import os
 
-__version__ = "0.1"
+__version__ = "0.2"
 
 
-def get_storage_system(workspace_dir):
-    # This function is adapted from Swift's profile
-    workspace_dir = pathlib.Path(workspace_dir)
-    library_path = Profile._migrate_library(workspace_dir, do_logging=True)
-    this_storage_version = DataItem.DataItem.storage_version
-    auto_migrations = list()
-    auto_migrations.append(
-        Profile.AutoMigration(
-            pathlib.Path(workspace_dir) /
-            "Nion Swift Workspace.nslib",
-            [
-                pathlib.Path(workspace_dir) /
-                "Nion Swift Data"]))
-    auto_migrations.append(
-        Profile.AutoMigration(
-            pathlib.Path(workspace_dir) /
-            "Nion Swift Workspace.nslib",
-            [
-                pathlib.Path(workspace_dir) /
-                "Nion Swift Data 10"]))
-    auto_migrations.append(
-        Profile.AutoMigration(
-            pathlib.Path(workspace_dir) /
-            "Nion Swift Workspace.nslib",
-            [
-                pathlib.Path(workspace_dir) /
-                "Nion Swift Data 11"]))
-    # Attemp at being future proof
-    if this_storage_version > 12:
-        for storage_version in range(12, this_storage_version):
-            auto_migrations.append(
-                Profile.AutoMigration(pathlib.Path(workspace_dir) / f"Nion Swift Library {storage_version}.nslib",
-                                      [pathlib.Path(workspace_dir) / f"Nion Swift Data {storage_version}"]))
-
-    # NOTE: when adding an AutoMigration here, also add the corresponding file
-    # copy in _migrate_library
-    storage_system = FileStorageSystem.FileStorageSystem(library_path, [pathlib.Path(
-        workspace_dir) / f"Nion Swift Data {this_storage_version}"], auto_migrations=auto_migrations)
-    return storage_system
 
 
 def axes_swift2hspy(axes, shape):
@@ -60,77 +22,84 @@ def axes_swift2hspy(axes, shape):
 
 
 class SwiftLibraryReader:
-    def __init__(self, workspace_dir):
-        self._storage_system = get_storage_system(workspace_dir)
-        self._data_items = sorted(
-            self._storage_system.find_data_items(),
-            key=lambda x: x.read_properties()["created"])
-        self._data_items_properties = [
-            di.read_properties() for di in self._data_items]
+    """Load items in Nion Swift project with HyperSpy"""
 
-    def get_data_items(self):
-        """Creates a DataFrame containing data_items properties in a NionSwift library
-       
+    def __init__(self, project_file_path):
+        """Parse Nion Swift project file
+        
+        Parameters
+        ----------
+        project_file_path: str
+            The path of the Nion Swift project file with extension `.nsproj`.
+        """
+        current_path = os.getcwd()
+        file_path = pathlib.Path(project_file_path)
+
+        if not os.path.isfile(file_path):
+            raise ValueError(f"The file {project_file_path} does not exist")
+        if file_path.suffix == ".nsproj":
+            r = Profile.IndexProjectReference()
+            r.project_path = file_path
+        else:
+            raise ValueError("Please provide a file with extension `.nsproj`")
+        r.persistent_object_context = Persistence.PersistentObjectContext()
+        r.load_project(None, pathlib.Path("."), cache_factory=None)
+        #  r.project._raw_properties["version"] = 3
+        r.project.read_project()
+        self._idp = r
+
+    def get_data_items_properties(self):
+        """Data items properties
+
         Returns
         ----------
 
-        DataFrame : Pandas DataFrame containing data_items properties if Pandas is installed; otherwise a dictionary containing the same data.
-               
-        Examples
-        --------
-
-        >>> df["title"]
-        0           HADF
-        1    LowMag2_TEM
-        2    LowMag1_TEM
-        Name: title, dtype: object
-
-        >>> df[df["title"].str.endswith("_TEM")] # can be used for filtering based on "title".
+        properties : pandas.DataFrame or dictionary
+            Pandas DataFrame containing data_items properties if Pandas is installed; otherwise a dictionary containing the same data.
 
         """
+
+        p = self._idp.project
+        properties = {}
+        for n, data_item in enumerate(p.data_items):
+            if data_item.xdata:
+                for key in data_item.properties.keys():
+                    if key in properties.keys():
+                        properties[key].append(data_item.properties[key])
+                    else:
+                        properties[key] = [data_item.properties[key]]
+            else:
+                for item in properties.items():
+                    if item[0] == "title":
+                        item[1].append(data_item.properties["title"])
+                    else:
+                        item[1].append("<Not data>")
+
         try:
             import pandas as pd
-            df = pd.DataFrame(self._data_items_properties)
+            df = pd.DataFrame(properties)
             return df
         except ImportError as e:
-            properties = self._data_items_properties
             return properties
 
-    def list_data_items(self, signal_type=None):
-        for i, md in enumerate(self._data_items_properties):
-            if signal_type == "ndspectrum":
-                if md["datum_dimension_count"] != 1 or md["data_shape"][0] < 2:
-                    continue
-            elif signal_type == "spectrum":
-                if md["datum_dimension_count"] != 1 or md["data_shape"][0] > 1:
-                    continue
-            elif signal_type == "image":
-                if md["datum_dimension_count"] != 2 or len(
-                        md["data_shape"]) != 2:
-                    continue
-            elif signal_type == "ndimage":
-                if md["datum_dimension_count"] != 2 or len(
-                        md["data_shape"]) < 3:
-                    continue
-            elif signal_type is not None:
-                raise ValueError(
-                    "signal_type must be one of: ndspectrum, spectrum, ndimage, image, not %s" %
-                    signal_type)
-            datum_dimension_count = 1
-            print(f"{i}")
-            print(f'\tTitle: {md["title"]}')
-            print(f'\tCreated: {md["created"]}')
-            print(f'\tShape: {md["data_shape"]}')
-            print(f'\tDatum dimension: {md["datum_dimension_count"]}')
-
     def load_data(self, num, lazy=True):
-        handler = self._data_items[num]
-        md = self._data_items_properties[num]
+        """The data item in a HyperSpy signal
+        
+        Parameters:
+        ----------
+        num: int
+            The index of the data item.
+        lazy: bool
+            If True, the data is not loaded into memory.
+        """
+        project = self._idp.project
+        handler = project.data_items[num]
+        md = handler.properties
         if md["datum_dimension_count"] == 1:
             Signal = LazySignal1D if lazy else Signal1D
         elif md["datum_dimension_count"] == 2:
             Signal = LazySignal2D if lazy else Signal2D
-        data = handler.read_data()
+        data = handler.data
         if lazy:
             data = da.from_array(data)
         signal = Signal(
