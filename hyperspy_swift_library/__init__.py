@@ -23,9 +23,9 @@ def axes_swift2hspy(axes, shape):
 
 class SwiftLibraryReader:
 
-    def __init__(self, workspace_dir):
+    def __init__(self, project_file_path):
         current_path = os.getcwd()
-        self._file_path = current_path+workspace_dir
+        self._file_path = project_file_path
 
     def read_project(self) -> Project.Project:
         file_path = pathlib.Path(self._file_path)
@@ -39,7 +39,7 @@ class SwiftLibraryReader:
             r = Profile.FolderProjectReference()
             r.project_folder_path = file_path
         r.persistent_object_context = Persistence.PersistentObjectContext()
-        r.load_project(None)
+        r.load_project(None, pathlib.Path("."), cache_factory=None)
         #  r.project._raw_properties["version"] = 3
         r.project.read_project()
         return r.project
@@ -47,7 +47,10 @@ class SwiftLibraryReader:
     def print_data_item_titles_sizes(self) -> None:
         p = self.read_project()
         for data_item in p.data_items:
-            print(f"{data_item.title}: {data_item.xdata.data.shape}")
+            if data_item.xdata:
+                print(f"{data_item.title}: {data_item.xdata.data.shape}")
+            else:
+                print(f"{data_item.title}: This item does not contain data")
 
 
 
@@ -76,11 +79,18 @@ class SwiftLibraryReader:
         p = self.read_project()
         properties = {}
         for data_item in p.data_items:
-            for key in data_item.properties.keys():
-                if key in properties.keys():
-                    properties[key].append(data_item.properties[key])
-                else:
-                    properties[key] = [data_item.properties[key]]
+            if data_item.xdata:
+                for key in data_item.properties.keys():
+                    if key in properties.keys():
+                        properties[key].append(data_item.properties[key])
+                    else:
+                        properties[key] = [data_item.properties[key]]
+            else:
+                for item in properties.items():
+                    if item[0] == "title":
+                        item[1].append(data_item.properties["title"])
+                    else:
+                        item[1].append("<Not data>")
 
         try:
             import pandas as pd
