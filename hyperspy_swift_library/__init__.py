@@ -10,7 +10,7 @@ from hyperspy._signals.signal1d import Signal1D, LazySignal1D
 from hyperspy._signals.signal2d import Signal2D, LazySignal2D
 import os
 
-__version__ = "0.1"
+__version__ = "0.2"
 
 
 
