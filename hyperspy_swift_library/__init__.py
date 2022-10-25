@@ -48,16 +48,6 @@ class SwiftLibraryReader:
         r.project.read_project()
         self._idp = r
 
-    def print_data_item_titles_sizes(self) -> None:
-        """Print data items and the shape of the data array.
-        """
-        p = self._idp.project
-        for n, data_item in enumerate(p.data_items):
-            if data_item.xdata:
-                print(f"{n}: {data_item.title}, data_shape={data_item.xdata.data.shape}")
-            else:
-                print(f"{n}: {data_item.title}, This item does not contain data")
-
     def get_data_items_properties(self):
         """Data items properties
 
@@ -71,7 +61,7 @@ class SwiftLibraryReader:
 
         p = self._idp.project
         properties = {}
-        for data_item in p.data_items:
+        for n, data_item in enumerate(p.data_items):
             if data_item.xdata:
                 for key in data_item.properties.keys():
                     if key in properties.keys():
@@ -102,7 +92,7 @@ class SwiftLibraryReader:
         lazy: bool
             If True, the data is not loaded into memory.
         """
-        project = self.read_project()
+        project = self._idp.project
         handler = project.data_items[num]
         md = handler.properties
         if md["datum_dimension_count"] == 1:
