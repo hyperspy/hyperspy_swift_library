@@ -22,61 +22,54 @@ def axes_swift2hspy(axes, shape):
 
 
 class SwiftLibraryReader:
+    """Load items in Nion Swift project with HyperSpy"""
 
     def __init__(self, project_file_path):
+        """Parse Nion Swift project file
+        
+        Parameters
+        ----------
+        project_file_path: str
+            The path of the Nion Swift project file with extension `.nsproj`.
+        """
         current_path = os.getcwd()
-        self._file_path = project_file_path
-
-    def read_project(self) -> Project.Project:
-        file_path = pathlib.Path(self._file_path)
+        file_path = pathlib.Path(project_file_path)
 
         if not os.path.isfile(file_path):
-            print('Project does not exist!')
+            raise ValueError(f"The file {project_file_path} does not exist")
         if file_path.suffix == ".nsproj":
             r = Profile.IndexProjectReference()
             r.project_path = file_path
         else:
-            r = Profile.FolderProjectReference()
-            r.project_folder_path = file_path
+            raise ValueError("Please provide a file with extension `.nsproj`")
         r.persistent_object_context = Persistence.PersistentObjectContext()
         r.load_project(None, pathlib.Path("."), cache_factory=None)
         #  r.project._raw_properties["version"] = 3
         r.project.read_project()
-        return r.project
+        self._idp = r
 
     def print_data_item_titles_sizes(self) -> None:
-        p = self.read_project()
+        """Print data items and the shape of the data array.
+        """
+        p = self._idp.project
         for data_item in p.data_items:
             if data_item.xdata:
                 print(f"{data_item.title}: {data_item.xdata.data.shape}")
             else:
                 print(f"{data_item.title}: This item does not contain data")
 
-
-
-
-    def get_data_items(self):
-        """Creates a DataFrame containing data_items properties in a NionSwift library
+    def get_data_items_properties(self):
+        """Data items properties
 
         Returns
         ----------
 
-        DataFrame : Pandas DataFrame containing data_items properties if Pandas is installed; otherwise a dictionary containing the same data.
-
-        Examples
-        --------
-
-        >>> df["title"]
-        0           HADF
-        1    LowMag2_TEM
-        2    LowMag1_TEM
-        Name: title, dtype: object
-
-        >>> df[df["title"].str.endswith("_TEM")] # can be used for filtering based on "title".
+        properties : pandas.DataFrame or dictionary
+            Pandas DataFrame containing data_items properties if Pandas is installed; otherwise a dictionary containing the same data.
 
         """
 
-        p = self.read_project()
+        p = self._idp.project
         properties = {}
         for data_item in p.data_items:
             if data_item.xdata:
@@ -99,9 +92,16 @@ class SwiftLibraryReader:
         except ImportError as e:
             return properties
 
-
-
     def load_data(self, num, lazy=True):
+        """The data item in a HyperSpy signal
+        
+        Parameters:
+        ----------
+        num: int
+            The index of the data item.
+        lazy: bool
+            If True, the data is not loaded into memory.
+        """
         project = self.read_project()
         handler = project.data_items[num]
         md = handler.properties
